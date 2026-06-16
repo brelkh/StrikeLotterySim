@@ -1,2 +1,2 @@
 # TotoSim
-Singapore Pools Toto simulator.
+Toto simulator.
