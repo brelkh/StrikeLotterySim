@@ -1,6 +1,6 @@
 # TotoSim
 
-A Singapore Toto simulator — see how lucky (or not) you'd be.
+A Toto simulator — see how lucky (or not) you'd be.
 
 **Live demo:** `https://<your-github-username>.github.io/TotoSim/`
 
