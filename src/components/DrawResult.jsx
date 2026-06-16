@@ -64,7 +64,7 @@ export default function DrawResult({ draw, userEntry, bestGroup, animate = false
         }}
       >
         <span style={{ fontSize: 22 }}>{won ? '🎉' : '😔'}</span>
-        <div>
+        <div style={{ flex: 1 }}>
           <p style={{ fontWeight: 700, fontSize: 15, color: won ? 'var(--success)' : 'var(--text)' }}>
             {won ? group.label : 'No prize'}
           </p>
@@ -72,6 +72,12 @@ export default function DrawResult({ draw, userEntry, bestGroup, animate = false
             <p style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 2 }}>{group.description}</p>
           )}
         </div>
+        {won && (
+          <div style={{ textAlign: 'right', flexShrink: 0 }}>
+            <p style={{ fontWeight: 700, fontSize: 15, color: 'var(--success)' }}>{group.prizeEst}</p>
+            <p style={{ fontSize: 10, color: 'var(--text-muted)', marginTop: 2 }}>{group.prizeNote}</p>
+          </div>
+        )}
       </div>
     </div>
   )

@@ -7,14 +7,16 @@ export const TOTO_MIN = 1
 export const TOTO_MAX = 49
 export const PICK_COUNT = 6
 
+// Prize estimates based on typical 2025 Singapore Toto draws.
+// Groups 1–4 are pari-mutuel (shared prize pool) so amounts vary; groups 5–7 are fixed.
 export const PRIZE_GROUPS = [
-  { group: 1, label: 'Group 1 (Jackpot)', description: 'Match 6', minMatch: 6, needsAdditional: false },
-  { group: 2, label: 'Group 2',           description: 'Match 5 + Additional', minMatch: 5, needsAdditional: true },
-  { group: 3, label: 'Group 3',           description: 'Match 5', minMatch: 5, needsAdditional: false },
-  { group: 4, label: 'Group 4',           description: 'Match 4 + Additional', minMatch: 4, needsAdditional: true },
-  { group: 5, label: 'Group 5',           description: 'Match 4', minMatch: 4, needsAdditional: false },
-  { group: 6, label: 'Group 6',           description: 'Match 3 + Additional', minMatch: 3, needsAdditional: true },
-  { group: 7, label: 'Group 7',           description: 'Match 3', minMatch: 3, needsAdditional: false },
+  { group: 1, label: 'Group 1 (Jackpot)', description: 'Match 6',            minMatch: 6, needsAdditional: false, prizeEst: '~$1M+',    prizeNote: 'Jackpot (pari-mutuel, min. $1M)' },
+  { group: 2, label: 'Group 2',           description: 'Match 5 + Additional', minMatch: 5, needsAdditional: true,  prizeEst: '~$250,000', prizeNote: 'Pari-mutuel, varies per draw' },
+  { group: 3, label: 'Group 3',           description: 'Match 5',            minMatch: 5, needsAdditional: false, prizeEst: '~$5,000',   prizeNote: 'Pari-mutuel, varies per draw' },
+  { group: 4, label: 'Group 4',           description: 'Match 4 + Additional', minMatch: 4, needsAdditional: true,  prizeEst: '~$500',     prizeNote: 'Pari-mutuel, varies per draw' },
+  { group: 5, label: 'Group 5',           description: 'Match 4',            minMatch: 4, needsAdditional: false, prizeEst: '$50',       prizeNote: 'Fixed prize' },
+  { group: 6, label: 'Group 6',           description: 'Match 3 + Additional', minMatch: 3, needsAdditional: true,  prizeEst: '$25',       prizeNote: 'Fixed prize' },
+  { group: 7, label: 'Group 7',           description: 'Match 3',            minMatch: 3, needsAdditional: false, prizeEst: '$10',       prizeNote: 'Fixed prize' },
 ]
 
 // Approximate odds per ordinary $1 bet

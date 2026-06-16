@@ -23,6 +23,22 @@
   --font: 'Inter', system-ui, -apple-system, sans-serif;
 }
 
+[data-theme="light"] {
+  --bg: #f4f4f8;
+  --surface: #ffffff;
+  --surface2: #ebebf2;
+  --border: #d8d8e8;
+  --primary: #6457e8;
+  --primary-hover: #5549d4;
+  --primary-dim: rgba(100, 87, 232, 0.1);
+  --accent: #c9900a;
+  --success: #16a34a;
+  --error: #dc2626;
+  --text: #18181f;
+  --text-muted: #6b6b85;
+  --text-dim: #55556e;
+}
+
 html {
   font-size: 16px;
   scroll-behavior: smooth;

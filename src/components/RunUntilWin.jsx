@@ -108,7 +108,10 @@ export default function RunUntilWin() {
               }}
             >
               <span>{g.label}</span>
-              <span style={{ fontSize: 11, opacity: 0.6 }}>~1 in {PRIZE_ODDS[g.group].toLocaleString()}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--success)', opacity: targetGroup === g.group ? 1 : 0.7 }}>{g.prizeEst}</span>
+                <span style={{ fontSize: 11, opacity: 0.5 }}>~1 in {PRIZE_ODDS[g.group].toLocaleString()}</span>
+              </div>
             </button>
           ))}
         </div>
@@ -198,15 +201,16 @@ export default function RunUntilWin() {
 
           {finalResult && (
             <div className="fade-in" style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 32 }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 32, flexWrap: 'wrap' }}>
                 <Stat label="Total spent" value={`$${finalResult.totalCost.toLocaleString()}`} />
                 <Stat label="Prize group" value={group.label} />
+                <Stat label="Est. prize" value={group.prizeEst} note={group.prizeNote} />
                 <Stat label="Odds" value={`1 in ${approxOdds.toLocaleString()}`} />
               </div>
               <p style={{ marginTop: 16, fontSize: 12, color: 'var(--text-muted)' }}>
                 🎉 You would have spent{' '}
                 <strong style={{ color: 'var(--text)' }}>${finalResult.totalCost.toLocaleString()}</strong>{' '}
-                to win {group.description.toLowerCase()}.
+                to win {group.description.toLowerCase()} ({group.prizeEst}).
               </p>
             </div>
           )}
@@ -216,11 +220,12 @@ export default function RunUntilWin() {
   )
 }
 
-function Stat({ label, value }) {
+function Stat({ label, value, note }) {
   return (
     <div style={{ textAlign: 'center' }}>
       <p style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4, textTransform: 'uppercase', letterSpacing: '0.06em' }}>{label}</p>
       <p style={{ fontSize: 15, fontWeight: 700, color: 'var(--text)' }}>{value}</p>
+      {note && <p style={{ fontSize: 9, color: 'var(--text-muted)', marginTop: 2, maxWidth: 80 }}>{note}</p>}
     </div>
   )
 }
