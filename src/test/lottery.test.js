@@ -1,49 +1,49 @@
 import { describe, it, expect } from 'vitest'
 import {
-  drawToto,
+  draw,
   quickPick,
   checkEntry,
   combinations,
   playRound,
   PRIZE_GROUPS,
   SYSTEM_ENTRIES,
-  TOTO_MIN,
-  TOTO_MAX,
+  MIN,
+  MAX,
   PICK_COUNT,
-} from '../utils/toto.js'
+} from '../utils/lottery.js'
 
-// ─── drawToto ────────────────────────────────────────────────────────────────
+// ─── draw ─────────────────────────────────────────────────────────────────────
 
-describe('drawToto', () => {
+describe('draw', () => {
   it('returns 6 winning numbers and 1 additional', () => {
-    const { winning, additional } = drawToto()
+    const { winning, additional } = draw()
     expect(winning).toHaveLength(6)
     expect(typeof additional).toBe('number')
   })
 
   it('winning numbers are within 1–49', () => {
-    const { winning } = drawToto()
+    const { winning } = draw()
     winning.forEach(n => {
-      expect(n).toBeGreaterThanOrEqual(TOTO_MIN)
-      expect(n).toBeLessThanOrEqual(TOTO_MAX)
+      expect(n).toBeGreaterThanOrEqual(MIN)
+      expect(n).toBeLessThanOrEqual(MAX)
     })
   })
 
   it('all 7 drawn numbers are unique', () => {
-    const { winning, additional } = drawToto()
+    const { winning, additional } = draw()
     const all = [...winning, additional]
     expect(new Set(all).size).toBe(7)
   })
 
   it('winning numbers are sorted ascending', () => {
-    const { winning } = drawToto()
+    const { winning } = draw()
     for (let i = 1; i < winning.length; i++) {
       expect(winning[i]).toBeGreaterThan(winning[i - 1])
     }
   })
 
   it('produces different draws across multiple calls', () => {
-    const draws = Array.from({ length: 20 }, () => drawToto().winning.join(','))
+    const draws = Array.from({ length: 20 }, () => draw().winning.join(','))
     const unique = new Set(draws)
     expect(unique.size).toBeGreaterThan(1)
   })
@@ -173,8 +173,6 @@ describe('playRound', () => {
   })
 
   it('system 7 entry checks 7 combinations', () => {
-    // Force a win by using the draw numbers as part of our 7-number selection
-    // This is probabilistic but testing the mechanic is sufficient
     const result = playRound(quickPick(7), 'system7')
     expect(result.draw.winning).toHaveLength(6)
   })

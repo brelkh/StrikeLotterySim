@@ -36,9 +36,9 @@ export default function App() {
       }}>
         <div>
           <h1 style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em', color: 'var(--text)' }}>
-            Toto<span style={{ color: 'var(--primary)' }}>Sim</span>
+            ⚡ Stri<span style={{ color: 'var(--primary)' }}>ke</span>
           </h1>
-          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>Singapore Toto Simulator</p>
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 1 }}>Lottery Odds Simulator</p>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
@@ -137,7 +137,7 @@ export default function App() {
           Prize estimates are approximate and based on typical 2025 draws.
         </p>
         <a
-          href="https://github.com/brelkh/TotoSim"
+          href="https://github.com/brelkh/Strike"
           target="_blank"
           rel="noopener noreferrer"
           style={{

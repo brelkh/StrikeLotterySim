@@ -1,13 +1,13 @@
-// Singapore Toto rules:
+// 6/49 lottery format:
 // - Pick 6 numbers from 1–49
 // - Draw produces 6 winning numbers + 1 additional number
 // - Prize groups 1–7 based on matches
 
-export const TOTO_MIN = 1
-export const TOTO_MAX = 49
+export const MIN = 1
+export const MAX = 49
 export const PICK_COUNT = 6
 
-// Prize estimates based on typical 2025 Singapore Toto draws.
+// Prize estimates based on typical 2025 Singapore 6/49 lottery draws.
 // Groups 1–4 are pari-mutuel (shared prize pool) so amounts vary; groups 5–7 are fixed.
 export const PRIZE_GROUPS = [
   { group: 1, label: 'Group 1 (Jackpot)', description: 'Match 6',            minMatch: 6, needsAdditional: false, prizeEst: '~$1M+',    prizeNote: 'Jackpot (pari-mutuel, min. $1M)' },
@@ -43,7 +43,7 @@ export const SYSTEM_ENTRIES = [
 ]
 
 /** Draw 6 winning + 1 additional from 1–49, all unique */
-export function drawToto() {
+export function draw() {
   const pool = Array.from({ length: 49 }, (_, i) => i + 1)
   shuffle(pool)
   const winning = pool.slice(0, 6).sort((a, b) => a - b)
@@ -104,7 +104,7 @@ export function combinations(arr) {
  * Returns { draw, bestGroup, matchedEntry } where bestGroup is 1–7 or null.
  */
 export function playRound(numbers, entryType) {
-  const draw = drawToto()
+  const result = draw()
   const entries = entryType === 'ordinary' || entryType === 'quickpick'
     ? [numbers]
     : combinations(numbers)
@@ -112,13 +112,13 @@ export function playRound(numbers, entryType) {
   let bestGroup = null
   let matchedEntry = null
   for (const entry of entries) {
-    const group = checkEntry(entry, draw)
+    const group = checkEntry(entry, result)
     if (group !== null && (bestGroup === null || group < bestGroup)) {
       bestGroup = group
       matchedEntry = entry
     }
   }
-  return { draw, bestGroup, matchedEntry }
+  return { draw: result, bestGroup, matchedEntry }
 }
 
 /**

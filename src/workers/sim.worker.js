@@ -1,4 +1,4 @@
-import { runUntilWin } from '../utils/toto.js'
+import { runUntilWin } from '../utils/lottery.js'
 
 self.onmessage = ({ data }) => {
   const { targetGroup, entryType, userNumbers } = data

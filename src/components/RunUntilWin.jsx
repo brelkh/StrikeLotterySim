@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import { PRIZE_GROUPS, PRIZE_ODDS, SYSTEM_ENTRIES } from '../utils/toto.js'
+import { PRIZE_GROUPS, PRIZE_ODDS, SYSTEM_ENTRIES } from '../utils/lottery.js'
 
 // Group 7 (easiest) shown first; Group 1 (jackpot) at the bottom
 const DISPLAY_GROUPS = [...PRIZE_GROUPS].reverse()
@@ -41,7 +41,7 @@ export default function RunUntilWin() {
     if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
 
     const worker = new Worker(
-      new URL('../workers/totoSim.worker.js', import.meta.url),
+      new URL('../workers/sim.worker.js', import.meta.url),
       { type: 'module' }
     )
     workerRef.current = worker

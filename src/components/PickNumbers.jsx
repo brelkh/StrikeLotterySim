@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { SYSTEM_ENTRIES, quickPick, playRound } from '../utils/toto.js'
+import { SYSTEM_ENTRIES, quickPick, playRound } from '../utils/lottery.js'
 import NumberGrid from './NumberGrid.jsx'
 import DrawResult from './DrawResult.jsx'
 import NumberBall from './NumberBall.jsx'

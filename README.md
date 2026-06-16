@@ -1,8 +1,8 @@
-# TotoSim
+# ⚡ Strike
 
-A Toto simulator — see how lucky (or not) you'd be.
+An educational lottery odds simulator — find out how lucky (or not) you'd be.
 
-**Live demo:** `https://<your-github-username>.github.io/TotoSim/`
+**Live demo:** `https://brelkh.github.io/Strike/`
 
 ---
 
@@ -10,16 +10,17 @@ A Toto simulator — see how lucky (or not) you'd be.
 
 | Tab | What it does |
 |---|---|
-| **Check Numbers** | Pick your 6 numbers, run a draw, see what you matched |
-| **Pick & Play** | Choose Quick Pick, System 7–12, or Ordinary; run a draw |
+| **Pick & Play** | Quick Pick, Ordinary, or System 7–12 (with Random auto-fill) |
 | **Run Until Win** | Simulate draws until you win a target prize group; shows total draws and cost in SGD |
 
-- Animated win / lose results
+- Animated win / lose results with estimated prize amounts
 - System entries (7–12 numbers) with correct C(n,6) combination checking
 - Approximate odds displayed for each prize group
+- Live counter ticks up in real-time during long simulations
+- Light / dark mode, persisted across sessions
 - Runs entirely in the browser — no data sent anywhere
 
-## Toto rules
+## 6/49 lottery rules (Singapore format)
 
 - Pick 6 numbers from 1–49
 - Each draw produces 6 winning numbers + 1 additional number
@@ -28,8 +29,8 @@ A Toto simulator — see how lucky (or not) you'd be.
 ## Running locally
 
 ```bash
-git clone https://github.com/<your-username>/TotoSim.git
-cd TotoSim
+git clone https://github.com/brelkh/Strike.git
+cd Strike
 npm install
 npm run dev
 ```
@@ -42,16 +43,15 @@ npm test
 
 ## Deploying to GitHub Pages
 
-1. In `vite.config.js`, confirm `base: '/TotoSim/'` matches your repo name.
-2. In `package.json`, the `deploy` script runs `gh-pages -d dist`.
-3. In your GitHub repo → Settings → Pages → set source to the `gh-pages` branch.
-4. Then run:
+1. In `vite.config.js`, confirm `base: '/Strike/'` matches your repo name.
+2. In GitHub repo → Settings → Pages → set source to the `gh-pages` branch.
+3. Then run:
 
 ```bash
 npm run deploy
 ```
 
-The site will be live at `https://<your-username>.github.io/TotoSim/`.
+The site will be live at `https://brelkh.github.io/Strike/`.
 
 ## Monetisation
 
@@ -60,5 +60,5 @@ add the script tag to `index.html`, and place ad units in the JSX components.
 
 ## Disclaimer
 
-For entertainment only. Toto is operated by [Singapore Pools](https://www.singaporepools.com.sg).
-Please gamble responsibly.
+For educational purposes only. No real money is involved.
+Prize estimates are approximate and based on typical 2025 Singapore draws.

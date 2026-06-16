@@ -1,4 +1,4 @@
-import { PRIZE_GROUPS } from '../utils/toto.js'
+import { PRIZE_GROUPS } from '../utils/lottery.js'
 import NumberBall from './NumberBall.jsx'
 
 export default function DrawResult({ draw, userEntry, bestGroup, animate = false }) {
