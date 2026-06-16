@@ -40,6 +40,11 @@ export default function PickNumbers() {
     setResult(null)
   }
 
+  function autoFill() {
+    setSelected(quickPick(config.pick))
+    setResult(null)
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
       {/* Entry type selector */}
@@ -80,9 +85,12 @@ export default function PickNumbers() {
                 <span style={{ color: 'var(--primary)', marginLeft: 8 }}>({selected.length}/{config.pick})</span>
               )}
             </p>
-            {selected.length > 0 && (
-              <button onClick={reset} style={ghostBtnStyle}>Clear</button>
-            )}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={autoFill} style={ghostBtnStyle}>Random</button>
+              {selected.length > 0 && (
+                <button onClick={reset} style={ghostBtnStyle}>Clear</button>
+              )}
+            </div>
           </div>
           <NumberGrid selected={selected} onToggle={toggle} max={config.pick} />
         </div>
