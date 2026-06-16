@@ -1,6 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
 import { PRIZE_GROUPS, PRIZE_ODDS, SYSTEM_ENTRIES } from '../utils/toto.js'
 
+// Group 7 (easiest) shown first; Group 1 (jackpot) at the bottom
+const DISPLAY_GROUPS = [...PRIZE_GROUPS].reverse()
+
+// Warn the user when a simulation is expected to take many seconds
+const SLOW_GROUPS = new Set([1, 2, 3])
+
 export default function RunUntilWin() {
   const [targetGroup, setTargetGroup] = useState(7)
   const [entryType, setEntryType] = useState('ordinary')
@@ -9,18 +15,30 @@ export default function RunUntilWin() {
   const [finalResult, setFinalResult] = useState(null)
   const workerRef = useRef(null)
   const animFrameRef = useRef(null)
+  const lastProgressRef = useRef(0)
 
   const config = SYSTEM_ENTRIES.find(e => e.type === entryType)
   const group = PRIZE_GROUPS.find(g => g.group === targetGroup)
+  const approxOdds = Math.round(PRIZE_ODDS[targetGroup] / config.combos)
+  const expectedTries = approxOdds
+  const isSlow = SLOW_GROUPS.has(targetGroup)
+
+  function resetSim() {
+    setFinalResult(null)
+    setDisplayCount(0)
+    setStatus('idle')
+    lastProgressRef.current = 0
+  }
 
   function startSim() {
     if (status === 'running') return
     setStatus('running')
     setDisplayCount(0)
     setFinalResult(null)
+    lastProgressRef.current = 0
 
-    // Clean up previous worker
     if (workerRef.current) workerRef.current.terminate()
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current)
 
     const worker = new Worker(
       new URL('../workers/totoSim.worker.js', import.meta.url),
@@ -29,45 +47,44 @@ export default function RunUntilWin() {
     workerRef.current = worker
 
     worker.onmessage = ({ data }) => {
-      const { tries, totalCost } = data
-      animateCount(tries, totalCost)
-      worker.terminate()
+      if (data.type === 'progress') {
+        lastProgressRef.current = data.tries
+        setDisplayCount(data.tries)
+      } else if (data.type === 'done') {
+        const { tries, totalCost } = data
+        worker.terminate()
+        // Short ease-in to the final number from wherever the live counter is
+        animateFinal(lastProgressRef.current, tries, totalCost)
+      }
     }
 
-    worker.onerror = (e) => {
-      console.error('Worker error:', e)
-      setStatus('idle')
-    }
-
+    worker.onerror = () => setStatus('idle')
     worker.postMessage({ targetGroup, entryType, userNumbers: null })
   }
 
-  function animateCount(finalTries, totalCost) {
-    const duration = Math.min(2000, Math.max(600, finalTries * 0.5))
+  function animateFinal(from, to, totalCost) {
+    const gap = to - from
+    // If live counter already got close, just snap; otherwise short ease
+    if (gap < 5000) {
+      setDisplayCount(to)
+      setFinalResult({ tries: to, totalCost })
+      setStatus('done')
+      return
+    }
+    const duration = Math.min(1200, Math.max(400, gap * 0.2))
     const start = performance.now()
-    let lastShown = 0
-
     function tick(now) {
-      const elapsed = now - start
-      const progress = Math.min(elapsed / duration, 1)
-      // ease-out cubic
-      const eased = 1 - Math.pow(1 - progress, 3)
-      const current = Math.round(eased * finalTries)
-
-      if (current !== lastShown) {
-        setDisplayCount(current)
-        lastShown = current
-      }
-
-      if (progress < 1) {
+      const t = Math.min((now - start) / duration, 1)
+      const eased = 1 - Math.pow(1 - t, 3)
+      setDisplayCount(Math.round(from + eased * gap))
+      if (t < 1) {
         animFrameRef.current = requestAnimationFrame(tick)
       } else {
-        setDisplayCount(finalTries)
-        setFinalResult({ tries: finalTries, totalCost })
+        setDisplayCount(to)
+        setFinalResult({ tries: to, totalCost })
         setStatus('done')
       }
     }
-
     animFrameRef.current = requestAnimationFrame(tick)
   }
 
@@ -78,20 +95,22 @@ export default function RunUntilWin() {
     }
   }, [])
 
-  const approxOdds = Math.round(PRIZE_ODDS[targetGroup] / config.combos)
+  const progressPct = expectedTries > 0
+    ? Math.min((displayCount / expectedTries) * 100, 99)
+    : 0
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 24 }}>
-      {/* Target group */}
+      {/* Target group — Group 7 (easiest) at top */}
       <div>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Win at least
         </p>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {PRIZE_GROUPS.map(g => (
+          {DISPLAY_GROUPS.map(g => (
             <button
               key={g.group}
-              onClick={() => { setTargetGroup(g.group); setFinalResult(null); setDisplayCount(0); setStatus('idle') }}
+              onClick={() => { setTargetGroup(g.group); resetSim() }}
               style={{
                 display: 'flex',
                 alignItems: 'center',
@@ -109,7 +128,9 @@ export default function RunUntilWin() {
             >
               <span>{g.label}</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--success)', opacity: targetGroup === g.group ? 1 : 0.7 }}>{g.prizeEst}</span>
+                <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--success)', opacity: targetGroup === g.group ? 1 : 0.65 }}>
+                  {g.prizeEst}
+                </span>
                 <span style={{ fontSize: 11, opacity: 0.5 }}>~1 in {PRIZE_ODDS[g.group].toLocaleString()}</span>
               </div>
             </button>
@@ -117,7 +138,7 @@ export default function RunUntilWin() {
         </div>
       </div>
 
-      {/* Bet type (simplified) */}
+      {/* Bet type */}
       <div>
         <p style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 10, textTransform: 'uppercase', letterSpacing: '0.06em' }}>
           Bet type (per draw)
@@ -126,7 +147,7 @@ export default function RunUntilWin() {
           {SYSTEM_ENTRIES.map(e => (
             <button
               key={e.type}
-              onClick={() => { setEntryType(e.type); setFinalResult(null); setDisplayCount(0); setStatus('idle') }}
+              onClick={() => { setEntryType(e.type); resetSim() }}
               style={{
                 padding: '6px 12px',
                 borderRadius: 20,
@@ -145,6 +166,30 @@ export default function RunUntilWin() {
           Effective odds for {group.description}: ~1 in {approxOdds.toLocaleString()}
         </p>
       </div>
+
+      {/* Slow-group warning */}
+      {isSlow && status === 'idle' && (
+        <div style={{
+          padding: '10px 14px',
+          borderRadius: 'var(--radius-sm)',
+          background: 'rgba(247,201,111,0.08)',
+          border: '1px solid rgba(247,201,111,0.25)',
+          fontSize: 12,
+          color: 'var(--text-muted)',
+          display: 'flex',
+          gap: 8,
+          alignItems: 'flex-start',
+        }}>
+          <span>⚠️</span>
+          <span>
+            {targetGroup === 1
+              ? 'Group 1 requires ~14 million draws on average. Expect 5–15 seconds.'
+              : targetGroup === 2
+              ? 'Group 2 requires ~2.3 million draws on average. Expect a few seconds.'
+              : 'Group 3 requires ~55,000 draws on average. May take a moment.'}
+          </span>
+        </div>
+      )}
 
       {/* Run button */}
       <button
@@ -178,9 +223,34 @@ export default function RunUntilWin() {
           }}
         >
           {status === 'running' && (
-            <p style={{ fontSize: 12, color: 'var(--text-muted)', marginBottom: 12, animation: 'pulse 1.2s ease infinite', textTransform: 'uppercase', letterSpacing: '0.08em' }}>
-              Simulating draws…
-            </p>
+            <>
+              <p style={{
+                fontSize: 12,
+                color: 'var(--text-muted)',
+                marginBottom: 12,
+                animation: 'pulse 1.2s ease infinite',
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+              }}>
+                Simulating draws…
+              </p>
+              {/* Progress bar */}
+              <div style={{
+                height: 3,
+                borderRadius: 99,
+                background: 'var(--border)',
+                marginBottom: 16,
+                overflow: 'hidden',
+              }}>
+                <div style={{
+                  height: '100%',
+                  width: `${progressPct}%`,
+                  background: 'var(--primary)',
+                  borderRadius: 99,
+                  transition: 'width 0.3s ease',
+                }} />
+              </div>
+            </>
           )}
 
           <p style={{
@@ -188,7 +258,6 @@ export default function RunUntilWin() {
             fontWeight: 800,
             letterSpacing: '-0.03em',
             color: status === 'done' ? 'var(--success)' : 'var(--text)',
-            animation: 'countUp 0.05s ease',
             fontVariantNumeric: 'tabular-nums',
             lineHeight: 1,
             marginBottom: 4,
@@ -201,7 +270,7 @@ export default function RunUntilWin() {
 
           {finalResult && (
             <div className="fade-in" style={{ marginTop: 20, paddingTop: 20, borderTop: '1px solid var(--border)' }}>
-              <div style={{ display: 'flex', justifyContent: 'center', gap: 32, flexWrap: 'wrap' }}>
+              <div style={{ display: 'flex', justifyContent: 'center', gap: 28, flexWrap: 'wrap' }}>
                 <Stat label="Total spent" value={`$${finalResult.totalCost.toLocaleString()}`} />
                 <Stat label="Prize group" value={group.label} />
                 <Stat label="Est. prize" value={group.prizeEst} note={group.prizeNote} />

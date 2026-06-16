@@ -124,18 +124,69 @@ export function playRound(numbers, entryType) {
 /**
  * Simulate draws until achieving at least `targetGroup` (lower = better).
  * Returns { tries, totalCost }.
+ * onProgress(tries) is called every PROGRESS_INTERVAL iterations if provided.
  */
-export function runUntilWin(targetGroup, entryType = 'ordinary', userNumbers = null) {
+export function runUntilWin(targetGroup, entryType = 'ordinary', userNumbers = null, onProgress = null) {
   const config = SYSTEM_ENTRIES.find(e => e.type === entryType) || SYSTEM_ENTRIES[0]
   let tries = 0
   let totalCost = 0
+  const PROGRESS_INTERVAL = 100_000
 
-  while (true) {
-    const numbers = userNumbers || quickPick(config.pick)
-    const { bestGroup } = playRound(numbers, entryType)
-    tries++
-    totalCost += config.cost
-    if (bestGroup !== null && bestGroup <= targetGroup) break
+  // Optimised hot path for ordinary/quick-pick with no user numbers:
+  // reuse two arrays and use partial Fisher-Yates (k swaps instead of 48)
+  // to avoid per-iteration heap allocation that tanks perf at ~14M iterations.
+  const isSimple = (entryType === 'ordinary' || entryType === 'quickpick') && !userNumbers
+  if (isSimple) {
+    const drawPool   = Array.from({ length: 49 }, (_, i) => i + 1)
+    const ticketPool = Array.from({ length: 49 }, (_, i) => i + 1)
+
+    while (true) {
+      // Partial Fisher-Yates: select 7 for the draw (6 winning + 1 additional)
+      for (let i = 0; i < 7; i++) {
+        const j = i + ((Math.random() * (49 - i)) | 0)
+        const t = drawPool[i]; drawPool[i] = drawPool[j]; drawPool[j] = t
+      }
+      // Partial Fisher-Yates: select 6 for the random ticket
+      for (let i = 0; i < 6; i++) {
+        const j = i + ((Math.random() * (49 - i)) | 0)
+        const t = ticketPool[i]; ticketPool[i] = ticketPool[j]; ticketPool[j] = t
+      }
+
+      const additional = drawPool[6]
+      let matched = 0
+      let hasAdditional = false
+      for (let i = 0; i < 6; i++) {
+        const n = ticketPool[i]
+        if (n === additional) hasAdditional = true
+        for (let j = 0; j < 6; j++) {
+          if (drawPool[j] === n) { matched++; break }
+        }
+      }
+
+      let bestGroup = null
+      if (matched === 6)                      bestGroup = 1
+      else if (matched === 5 && hasAdditional) bestGroup = 2
+      else if (matched === 5)                  bestGroup = 3
+      else if (matched === 4 && hasAdditional) bestGroup = 4
+      else if (matched === 4)                  bestGroup = 5
+      else if (matched === 3 && hasAdditional) bestGroup = 6
+      else if (matched === 3)                  bestGroup = 7
+
+      tries++
+      totalCost += config.cost
+      if (onProgress && tries % PROGRESS_INTERVAL === 0) onProgress(tries)
+      if (bestGroup !== null && bestGroup <= targetGroup) break
+    }
+  } else {
+    // General path for system entries or user-supplied numbers
+    while (true) {
+      const numbers = userNumbers || quickPick(config.pick)
+      const { bestGroup } = playRound(numbers, entryType)
+      tries++
+      totalCost += config.cost
+      if (onProgress && tries % PROGRESS_INTERVAL === 0) onProgress(tries)
+      if (bestGroup !== null && bestGroup <= targetGroup) break
+    }
   }
 
   return { tries, totalCost }

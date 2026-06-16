@@ -133,12 +133,8 @@ export default function App() {
         alignItems: 'center',
       }}>
         <p style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-          For entertainment only. Toto is operated by{' '}
-          <a href="https://www.singaporepools.com.sg" target="_blank" rel="noopener noreferrer"
-            style={{ color: 'var(--primary)', textDecoration: 'none' }}>
-            Singapore Pools
-          </a>
-          . Prize estimates based on typical 2025 draws.
+          Educational probability simulator. No real money involved.
+          Prize estimates are approximate and based on typical 2025 draws.
         </p>
         <a
           href="https://github.com/brelkh/TotoSim"
