@@ -44,15 +44,28 @@ npm test
 
 ## Deploying to GitHub Pages
 
-1. In `vite.config.js`, confirm `base: '/StrikeLotterySim/'` matches your repo name.
-2. In GitHub repo → Settings → Pages → set source to the `gh-pages` branch.
-3. Then run:
+Deployment is automated by GitHub Actions ([`.github/workflows/deploy.yml`](.github/workflows/deploy.yml)).
+Every push to `main` builds with Node 20, runs the tests, and force-pushes `dist/` to the
+`gh-pages` branch; GitHub's `pages-build-deployment` then serves it. **You no longer run
+`npm run deploy` by hand** — just push to `main`.
 
-```bash
-npm run deploy
+```
+push to main ──▶ Actions: npm ci → npm test → npm run build ──▶ gh-pages branch ──▶ Pages serves it
 ```
 
-The site will be live at `https://brelkh.github.io/StrikeLotterySim/`.
+The site is live at `https://brelkh.github.io/StrikeLotterySim/`.
+
+### One-time GitHub settings
+- **Settings → Actions → General → Workflow permissions** → "Read and write permissions"
+  (the workflow needs to push to `gh-pages`).
+- **Settings → Pages → Source** → "Deploy from a branch" → `gh-pages` / `root`. Leave it on
+  this mode; do **not** switch to "GitHub Actions", which is a different Pages mode.
+
+### Notes
+- The test step gates the deploy — if tests fail, nothing is published.
+- `base: '/StrikeLotterySim/'` in `vite.config.js` must match the repo name, or assets 404.
+- `npm run deploy` still works as a manual fallback (requires local Node 18+, e.g. `nvm use 20`).
+- You can also trigger a deploy manually from the **Actions** tab (`workflow_dispatch`).
 
 ## Monetisation
 

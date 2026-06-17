@@ -45,8 +45,20 @@ npm run build       # production build → dist/
 npm run preview     # preview the production build
 npm test            # run test suite once
 npm run test:watch  # watch mode
-npm run deploy      # build + push to gh-pages branch
+npm run deploy      # manual fallback: build + push to gh-pages branch (needs Node 18+)
 ```
+
+## Deployment
+Automated via GitHub Actions (`.github/workflows/deploy.yml`): every push to `main` runs
+`npm ci` → `npm test` → `npm run build` on Node 20, then force-pushes `dist/` to the
+`gh-pages` branch (peaceiris/actions-gh-pages). GitHub's `pages-build-deployment` serves it.
+- Don't run `npm run deploy` by hand in normal flow — pushing to `main` deploys. The script
+  remains as a manual fallback (and for that, use Node 18+ since the repo default is Node 16).
+- Tests gate the deploy: a failing `npm test` blocks publishing.
+- `gh-pages` is fully regenerated from `dist/` each deploy, so anything that must persist on
+  that branch (e.g. its README) lives in `public/` on `main` and is copied in by the build.
+- GitHub one-time setup: Settings → Actions → "Read and write permissions"; Settings → Pages
+  → "Deploy from a branch" → `gh-pages` (not the "GitHub Actions" Pages mode).
 
 ## Vite base path
 Set to `/StrikeLotterySim/` in `vite.config.js` for GitHub Pages. Must match the GitHub repo name.
