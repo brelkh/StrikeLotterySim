@@ -63,3 +63,28 @@ add the script tag to `index.html`, and place ad units in the JSX components.
 
 For educational purposes only. No real money is involved.
 Prize estimates are approximate and based on typical 2025 Singapore draws.
+
+## How the two simulations differ
+
+Pick & Play and Run Until Win both model the **same** draw (6 winning + 1 additional,
+drawn uniformly from 1–49) and apply the **same** prize rules, so they always agree on
+results. They differ only in how they compute them, because each has a different job:
+
+- **Pick & Play** runs a draw **once** and needs rich detail for the UI — the drawn
+  numbers, which of yours matched, and (for System entries) the exact 6-number
+  combination that won. So it enumerates all `C(n,6)` combinations and checks each. That's
+  "slow" (924 combos for System 12) but happens once per click in ~0.2 ms, so speed is
+  irrelevant and the enumeration conveniently hands back the winning combo to highlight.
+
+- **Run Until Win** may loop **millions** of times (~14M for a Group 1 jackpot) and needs
+  only one bit per draw: did it beat the target group? So it skips enumeration entirely —
+  an entry's best prize is fully determined by how many of its numbers are winning numbers
+  plus whether the additional is among them, so it counts that overlap directly and reuses
+  fixed arrays to avoid any per-iteration memory allocation. At that scale, those choices
+  are the difference between instant and multi-second.
+
+The lottery rules themselves are shared (`groupForMatch()` in `src/utils/lottery.js`), so
+the split is a deliberate readability-vs-throughput tradeoff, not a duplication of logic.
+A related consequence: picking fixed numbers vs. a random ticket each draw gives identical
+odds — every specific ticket has the same win probability — so Run Until Win's number
+picker is for intuition, not for changing the result.

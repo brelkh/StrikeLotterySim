@@ -32,6 +32,11 @@ No backend. All simulation logic runs client-side; heavy loops run in a Web Work
   `lottery.test.js`). `playRound()` still enumerates combos for the Pick & Play display.
 - Picking fixed numbers vs. a random ticket each draw yields identical odds — every
   specific ticket has the same win probability — so the number picker is for UX, not bias.
+- The two simulations are intentionally different and should stay that way: Pick & Play
+  (`playRound`) runs once and enumerates combos to surface the winning combination for the
+  UI; Run Until Win (`runUntilWin`) runs millions of times and counts overlap with zero
+  per-iteration allocation. Same rules core (`groupForMatch`), deliberate readability-vs-
+  throughput split — don't "unify" them onto one path.
 
 ## Commands
 ```bash
