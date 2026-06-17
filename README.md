@@ -11,8 +11,9 @@ An educational lottery odds simulator — find out how lucky (or not) you'd be.
 | Tab | What it does |
 |---|---|
 | **Pick & Play** | Quick Pick, Ordinary, or System 7–12 (with Random auto-fill) |
-| **Run Until Win** | Simulate draws until you win a target prize group; shows total draws and cost in SGD |
+| **Run Until Win** | Pick your own numbers (or leave blank for random) and simulate draws until you win a target prize group; shows total draws and cost in SGD |
 
+- Tap the **6/49** badge for an in-app explainer of the rules and prize groups
 - Animated win / lose results with estimated prize amounts
 - System entries (7–12 numbers) with correct C(n,6) combination checking
 - Approximate odds displayed for each prize group

@@ -9,7 +9,15 @@ const TABS = [
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('pick')
+  const [showRules, setShowRules] = useState(false)
   const [theme, setTheme] = useState(() => localStorage.getItem('theme') || 'dark')
+
+  useEffect(() => {
+    if (!showRules) return
+    function onKey(e) { if (e.key === 'Escape') setShowRules(false) }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [showRules])
 
   useEffect(() => {
     document.documentElement.setAttribute('data-theme', theme)
@@ -42,16 +50,41 @@ export default function App() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{
-            fontSize: 11,
-            background: 'var(--primary-dim)',
-            color: 'var(--primary-hover)',
-            padding: '4px 10px',
-            borderRadius: 20,
-            fontWeight: 600,
-          }}>
+          <button
+            onClick={() => setShowRules(true)}
+            title="How 6/49 works"
+            aria-label="How the 6/49 lottery works"
+            style={{
+              fontSize: 11,
+              background: 'var(--primary-dim)',
+              color: 'var(--primary-hover)',
+              padding: '4px 10px',
+              borderRadius: 20,
+              fontWeight: 600,
+              border: '1px solid transparent',
+              cursor: 'pointer',
+              display: 'flex',
+              alignItems: 'center',
+              gap: 5,
+              transition: 'border-color 0.15s',
+            }}
+            onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--primary)'}
+            onMouseLeave={e => e.currentTarget.style.borderColor = 'transparent'}
+          >
             6/49
-          </span>
+            <span style={{
+              display: 'inline-flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              width: 14,
+              height: 14,
+              borderRadius: '50%',
+              border: '1px solid currentColor',
+              fontSize: 9,
+              fontWeight: 700,
+              fontStyle: 'italic',
+            }}>i</span>
+          </button>
 
           {/* Theme toggle */}
           <button
@@ -137,7 +170,7 @@ export default function App() {
           Prize estimates are approximate and based on typical 2025 draws.
         </p>
         <a
-          href="https://github.com/brelkh/Strike"
+          href="https://github.com/brelkh/StrikeLotterySim"
           target="_blank"
           rel="noopener noreferrer"
           style={{
@@ -158,6 +191,99 @@ export default function App() {
           View source on GitHub
         </a>
       </footer>
+
+      {showRules && <RulesModal onClose={() => setShowRules(false)} />}
+    </div>
+  )
+}
+
+function RulesModal({ onClose }) {
+  const rows = [
+    ['Group 1 (Jackpot)', 'Match all 6'],
+    ['Group 2', 'Match 5 + additional'],
+    ['Group 3', 'Match 5'],
+    ['Group 4', 'Match 4 + additional'],
+    ['Group 5', 'Match 4'],
+    ['Group 6', 'Match 3 + additional'],
+    ['Group 7', 'Match 3'],
+  ]
+  return (
+    <div
+      onClick={onClose}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        background: 'rgba(0,0,0,0.55)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        padding: 16,
+        zIndex: 100,
+      }}
+    >
+      <div
+        onClick={e => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        aria-label="How 6/49 works"
+        style={{
+          background: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: 14,
+          maxWidth: 420,
+          width: '100%',
+          maxHeight: '85dvh',
+          overflowY: 'auto',
+          padding: 24,
+          boxShadow: '0 12px 40px rgba(0,0,0,0.4)',
+        }}
+      >
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 14 }}>
+          <h2 style={{ fontSize: 16, fontWeight: 800, color: 'var(--text)' }}>How 6/49 works</h2>
+          <button
+            onClick={onClose}
+            aria-label="Close"
+            style={{
+              background: 'var(--surface2)',
+              border: '1px solid var(--border)',
+              borderRadius: 8,
+              width: 28,
+              height: 28,
+              fontSize: 16,
+              lineHeight: 1,
+              color: 'var(--text)',
+              cursor: 'pointer',
+            }}
+          >
+            ×
+          </button>
+        </div>
+
+        <ul style={{ fontSize: 13, color: 'var(--text)', lineHeight: 1.6, paddingLeft: 18, margin: '0 0 16px' }}>
+          <li>Pick <strong>6 numbers</strong> from <strong>1 to 49</strong>.</li>
+          <li>Each draw reveals <strong>6 winning numbers</strong> plus <strong>1 additional number</strong>.</li>
+          <li>You win a prize when at least <strong>3</strong> of your numbers match. The additional number lifts certain tiers to the next group.</li>
+        </ul>
+
+        <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--text-muted)', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.04em' }}>
+          Prize groups
+        </div>
+        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 13, color: 'var(--text)' }}>
+          <tbody>
+            {rows.map(([g, d]) => (
+              <tr key={g} style={{ borderTop: '1px solid var(--border)' }}>
+                <td style={{ padding: '6px 0', fontWeight: 600 }}>{g}</td>
+                <td style={{ padding: '6px 0', textAlign: 'right', color: 'var(--text-muted)' }}>{d}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 14 }}>
+          A <strong>System entry</strong> (7–12 numbers) plays every possible 6-number
+          combination of your picks — more coverage, higher cost.
+        </p>
+      </div>
     </div>
   )
 }

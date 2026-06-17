@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react'
-import { PRIZE_GROUPS, PRIZE_ODDS, SYSTEM_ENTRIES } from '../utils/lottery.js'
+import { PRIZE_GROUPS, PRIZE_ODDS, SYSTEM_ENTRIES, quickPick } from '../utils/lottery.js'
+import NumberGrid from './NumberGrid.jsx'
 
 // Group 7 (easiest) shown first; Group 1 (jackpot) at the bottom
 const DISPLAY_GROUPS = [...PRIZE_GROUPS].reverse()
@@ -10,6 +11,7 @@ const SLOW_GROUPS = new Set([1, 2, 3])
 export default function RunUntilWin() {
   const [targetGroup, setTargetGroup] = useState(7)
   const [entryType, setEntryType] = useState('ordinary')
+  const [selected, setSelected] = useState([])
   const [status, setStatus] = useState('idle') // idle | running | done
   const [displayCount, setDisplayCount] = useState(0)
   const [finalResult, setFinalResult] = useState(null)
@@ -22,12 +24,35 @@ export default function RunUntilWin() {
   const approxOdds = Math.round(PRIZE_ODDS[targetGroup] / config.combos)
   const expectedTries = approxOdds
   const isSlow = SLOW_GROUPS.has(targetGroup)
+  const isQP = entryType === 'quickpick'
+  const hasFullPick = selected.length === config.pick
 
   function resetSim() {
     setFinalResult(null)
     setDisplayCount(0)
     setStatus('idle')
     lastProgressRef.current = 0
+  }
+
+  function changeEntry(type) {
+    setEntryType(type)
+    setSelected([])
+    resetSim()
+  }
+
+  function toggle(n) {
+    setSelected(prev => prev.includes(n) ? prev.filter(x => x !== n) : [...prev, n])
+    resetSim()
+  }
+
+  function autoFill() {
+    setSelected(quickPick(config.pick))
+    resetSim()
+  }
+
+  function clearNums() {
+    setSelected([])
+    resetSim()
   }
 
   function startSim() {
@@ -59,7 +84,10 @@ export default function RunUntilWin() {
     }
 
     worker.onerror = () => setStatus('idle')
-    worker.postMessage({ targetGroup, entryType, userNumbers: null })
+    // Play the user's own numbers each draw when they've chosen a full set;
+    // otherwise simulate a fresh random ticket per draw (same odds either way).
+    const userNumbers = !isQP && hasFullPick ? selected : null
+    worker.postMessage({ targetGroup, entryType, userNumbers })
   }
 
   function animateFinal(from, to, totalCost) {
@@ -147,7 +175,7 @@ export default function RunUntilWin() {
           {SYSTEM_ENTRIES.map(e => (
             <button
               key={e.type}
-              onClick={() => { setEntryType(e.type); resetSim() }}
+              onClick={() => changeEntry(e.type)}
               style={{
                 padding: '6px 12px',
                 borderRadius: 20,
@@ -166,6 +194,36 @@ export default function RunUntilWin() {
           Effective odds for {group.description}: ~1 in {approxOdds.toLocaleString()}
         </p>
       </div>
+
+      {/* Your numbers — pick a fixed ticket, or leave blank for random each draw */}
+      {isQP ? (
+        <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: -8 }}>
+          Quick Pick simulates a fresh random ticket each draw.
+        </p>
+      ) : (
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+            <p style={{ fontSize: 13, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.06em' }}>
+              Your numbers <span style={{ textTransform: 'none', opacity: 0.7 }}>(optional)</span>
+              {selected.length > 0 && (
+                <span style={{ color: 'var(--primary)', marginLeft: 8 }}>{selected.length}/{config.pick}</span>
+              )}
+            </p>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={autoFill} style={ghostBtnStyle}>Random</button>
+              {selected.length > 0 && (
+                <button onClick={clearNums} style={ghostBtnStyle}>Clear</button>
+              )}
+            </div>
+          </div>
+          <NumberGrid selected={selected} onToggle={toggle} max={config.pick} disabled={status === 'running'} />
+          <p style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 8 }}>
+            {hasFullPick
+              ? 'Your numbers will be played on every draw.'
+              : `Pick ${config.pick} numbers to play the same ticket each draw, or leave blank to simulate a random ticket each draw. The odds are identical either way.`}
+          </p>
+        </div>
+      )}
 
       {/* Slow-group warning */}
       {isSlow && status === 'idle' && (
@@ -287,6 +345,17 @@ export default function RunUntilWin() {
       )}
     </div>
   )
+}
+
+const ghostBtnStyle = {
+  background: 'none',
+  border: '1px solid var(--border)',
+  color: 'var(--text-muted)',
+  borderRadius: 'var(--radius-sm)',
+  padding: '6px 14px',
+  fontSize: 13,
+  fontWeight: 500,
+  cursor: 'pointer',
 }
 
 function Stat({ label, value, note }) {

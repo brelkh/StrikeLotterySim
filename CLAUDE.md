@@ -12,10 +12,10 @@ No backend. All simulation logic runs client-side; heavy loops run in a Web Work
 ## Key files
 | Path | Purpose |
 |---|---|
-| `src/utils/lottery.js` | All lottery game logic (draw, check, simulate) |
+| `src/utils/lottery.js` | All lottery game logic (draw, check, simulate). `groupForMatch()` is the single prize ladder; `runUntilWin()` is one allocation-free loop for all entry types |
 | `src/workers/sim.worker.js` | Web Worker for run-until-win simulation |
 | `src/components/PickNumbers.jsx` | Pick & Play tab: Quick Pick / Ordinary / System entries |
-| `src/components/RunUntilWin.jsx` | Run Until Win tab: sim loop with live counter |
+| `src/components/RunUntilWin.jsx` | Run Until Win tab: optional number picker (own ticket or random), sim loop with live counter |
 | `src/components/DrawResult.jsx` | Shared result display with win/lose state and prize estimate |
 | `src/components/NumberBall.jsx` | Single number ball, styled by state |
 | `src/components/NumberGrid.jsx` | 7×7 clickable grid for number selection |
@@ -26,6 +26,12 @@ No backend. All simulation logic runs client-side; heavy loops run in a Web Work
 - Prize groups 1–7 (Group 1 = jackpot, match 6; Group 7 = match 3)
 - System entries: 7–12 numbers → C(n,6) ordinary combinations per draw
 - Cost: $1 per ordinary bet; system entries cost $1 × number of combinations
+- Run-until-win does **not** enumerate combinations: an entry's best prize is fully
+  determined by how many of its numbers are winning numbers plus whether the additional
+  is among them, so the sim counts that overlap directly (see the equivalence test in
+  `lottery.test.js`). `playRound()` still enumerates combos for the Pick & Play display.
+- Picking fixed numbers vs. a random ticket each draw yields identical odds — every
+  specific ticket has the same win probability — so the number picker is for UX, not bias.
 
 ## Commands
 ```bash

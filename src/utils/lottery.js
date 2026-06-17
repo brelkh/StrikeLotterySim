@@ -59,8 +59,24 @@ export function quickPick(n = 6) {
 }
 
 /**
- * Check a single 6-number entry against a draw result.
- * Returns the best prize group won (1–7), or null if no win.
+ * Map a match count + additional flag to a prize group (1–7), or null for no win.
+ * This is the single source of truth for the prize ladder.
+ */
+export function groupForMatch(matched, hasAdditional) {
+  if (matched >= 6) return 1
+  if (matched === 5) return hasAdditional ? 2 : 3
+  if (matched === 4) return hasAdditional ? 4 : 5
+  if (matched === 3) return hasAdditional ? 6 : 7
+  return null
+}
+
+/**
+ * Check an entry against a draw result and return the best prize group (1–7), or null.
+ *
+ * Works for any entry size: passing all of a system entry's numbers (7–12) yields the
+ * same best group as enumerating every C(n,6) combination, because the best 6-pick
+ * just takes the matched winning numbers, adds the additional if it helps, and fills
+ * the rest — so counting the overlap is sufficient.
  */
 export function checkEntry(entry, { winning, additional }) {
   const winSet = new Set(winning)
@@ -72,14 +88,7 @@ export function checkEntry(entry, { winning, additional }) {
     if (n === additional) hasAdditional = true
   }
 
-  if (matched === 6) return 1
-  if (matched === 5 && hasAdditional) return 2
-  if (matched === 5) return 3
-  if (matched === 4 && hasAdditional) return 4
-  if (matched === 4) return 5
-  if (matched === 3 && hasAdditional) return 6
-  if (matched === 3) return 7
-  return null
+  return groupForMatch(matched, hasAdditional)
 }
 
 /**
@@ -132,61 +141,50 @@ export function runUntilWin(targetGroup, entryType = 'ordinary', userNumbers = n
   let totalCost = 0
   const PROGRESS_INTERVAL = 100_000
 
-  // Optimised hot path for ordinary/quick-pick with no user numbers:
-  // reuse two arrays and use partial Fisher-Yates (k swaps instead of 48)
-  // to avoid per-iteration heap allocation that tanks perf at ~14M iterations.
-  const isSimple = (entryType === 'ordinary' || entryType === 'quickpick') && !userNumbers
-  if (isSimple) {
-    const drawPool   = Array.from({ length: 49 }, (_, i) => i + 1)
-    const ticketPool = Array.from({ length: 49 }, (_, i) => i + 1)
+  // One fast path for every entry type. An entry's best prize depends only on how many
+  // of the player's numbers are winning numbers and whether the additional is among
+  // them, so we count the overlap directly — no need to enumerate C(n,6) combinations
+  // for system entries. Reusable pools + partial Fisher-Yates (k swaps, not 48) keep the
+  // hot loop allocation-free, which matters at the ~14M iterations a Group 1 run takes.
+  const fixed = userNumbers && userNumbers.length ? userNumbers : null
+  const k = fixed ? fixed.length : config.pick
+  const drawPool   = Array.from({ length: 49 }, (_, i) => i + 1)
+  const ticketPool = Array.from({ length: 49 }, (_, i) => i + 1)
 
-    while (true) {
-      // Partial Fisher-Yates: select 7 for the draw (6 winning + 1 additional)
-      for (let i = 0; i < 7; i++) {
-        const j = i + ((Math.random() * (49 - i)) | 0)
-        const t = drawPool[i]; drawPool[i] = drawPool[j]; drawPool[j] = t
-      }
-      // Partial Fisher-Yates: select 6 for the random ticket
-      for (let i = 0; i < 6; i++) {
+  while (true) {
+    // Partial Fisher-Yates: select 7 for the draw (6 winning + 1 additional)
+    for (let i = 0; i < 7; i++) {
+      const j = i + ((Math.random() * (49 - i)) | 0)
+      const t = drawPool[i]; drawPool[i] = drawPool[j]; drawPool[j] = t
+    }
+    const additional = drawPool[6]
+
+    let ticket = fixed
+    if (!ticket) {
+      // Partial Fisher-Yates: select k numbers for the random ticket
+      for (let i = 0; i < k; i++) {
         const j = i + ((Math.random() * (49 - i)) | 0)
         const t = ticketPool[i]; ticketPool[i] = ticketPool[j]; ticketPool[j] = t
       }
+      ticket = ticketPool
+    }
 
-      const additional = drawPool[6]
-      let matched = 0
-      let hasAdditional = false
-      for (let i = 0; i < 6; i++) {
-        const n = ticketPool[i]
-        if (n === additional) hasAdditional = true
-        for (let j = 0; j < 6; j++) {
-          if (drawPool[j] === n) { matched++; break }
-        }
+    let matched = 0
+    let hasAdditional = false
+    for (let i = 0; i < k; i++) {
+      const n = ticket[i]
+      if (n === additional) hasAdditional = true
+      for (let j = 0; j < 6; j++) {
+        if (drawPool[j] === n) { matched++; break }
       }
-
-      let bestGroup = null
-      if (matched === 6)                      bestGroup = 1
-      else if (matched === 5 && hasAdditional) bestGroup = 2
-      else if (matched === 5)                  bestGroup = 3
-      else if (matched === 4 && hasAdditional) bestGroup = 4
-      else if (matched === 4)                  bestGroup = 5
-      else if (matched === 3 && hasAdditional) bestGroup = 6
-      else if (matched === 3)                  bestGroup = 7
-
-      tries++
-      totalCost += config.cost
-      if (onProgress && tries % PROGRESS_INTERVAL === 0) onProgress(tries)
-      if (bestGroup !== null && bestGroup <= targetGroup) break
     }
-  } else {
-    // General path for system entries or user-supplied numbers
-    while (true) {
-      const numbers = userNumbers || quickPick(config.pick)
-      const { bestGroup } = playRound(numbers, entryType)
-      tries++
-      totalCost += config.cost
-      if (onProgress && tries % PROGRESS_INTERVAL === 0) onProgress(tries)
-      if (bestGroup !== null && bestGroup <= targetGroup) break
-    }
+
+    const bestGroup = groupForMatch(matched, hasAdditional)
+
+    tries++
+    totalCost += config.cost
+    if (onProgress && tries % PROGRESS_INTERVAL === 0) onProgress(tries)
+    if (bestGroup !== null && bestGroup <= targetGroup) break
   }
 
   return { tries, totalCost }

@@ -3,8 +3,10 @@ import {
   draw,
   quickPick,
   checkEntry,
+  groupForMatch,
   combinations,
   playRound,
+  runUntilWin,
   PRIZE_GROUPS,
   SYSTEM_ENTRIES,
   MIN,
@@ -175,6 +177,99 @@ describe('playRound', () => {
   it('system 7 entry checks 7 combinations', () => {
     const result = playRound(quickPick(7), 'system7')
     expect(result.draw.winning).toHaveLength(6)
+  })
+})
+
+// ─── groupForMatch ────────────────────────────────────────────────────────────
+
+describe('groupForMatch', () => {
+  it('maps match counts to the correct prize group', () => {
+    expect(groupForMatch(6, false)).toBe(1)
+    expect(groupForMatch(6, true)).toBe(1)
+    expect(groupForMatch(5, true)).toBe(2)
+    expect(groupForMatch(5, false)).toBe(3)
+    expect(groupForMatch(4, true)).toBe(4)
+    expect(groupForMatch(4, false)).toBe(5)
+    expect(groupForMatch(3, true)).toBe(6)
+    expect(groupForMatch(3, false)).toBe(7)
+  })
+
+  it('returns null below 3 matches', () => {
+    expect(groupForMatch(2, true)).toBeNull()
+    expect(groupForMatch(0, false)).toBeNull()
+  })
+})
+
+// ─── system entry fast-path equivalence ───────────────────────────────────────
+
+describe('system entry fast path', () => {
+  // The optimised runUntilWin counts overlap instead of enumerating C(n,6) combos.
+  // This proves that shortcut returns the same best group as the brute-force path.
+  it('checkEntry over all numbers equals the best of every C(n,6) combination', () => {
+    for (let trial = 0; trial < 300; trial++) {
+      const numbers = quickPick(12)
+      const result = draw()
+
+      const fast = checkEntry(numbers, result)
+
+      let brute = null
+      for (const combo of combinations(numbers)) {
+        const g = checkEntry(combo, result)
+        if (g !== null && (brute === null || g < brute)) brute = g
+      }
+
+      expect(fast).toBe(brute)
+    }
+  })
+
+  it('holds for every system entry size against a rigged Group 1 draw', () => {
+    const numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    const result = { winning: [1, 2, 3, 4, 5, 6], additional: 7 }
+    SYSTEM_ENTRIES.filter(e => e.pick > 6).forEach(e => {
+      const picks = numbers.slice(0, e.pick)
+      const fast = checkEntry(picks, result)
+      let brute = null
+      for (const combo of combinations(picks)) {
+        const g = checkEntry(combo, result)
+        if (g !== null && (brute === null || g < brute)) brute = g
+      }
+      expect(fast).toBe(brute)
+    })
+  })
+})
+
+// ─── runUntilWin ──────────────────────────────────────────────────────────────
+
+describe('runUntilWin', () => {
+  it('terminates and reports cost = tries × entry cost (ordinary)', () => {
+    const { tries, totalCost } = runUntilWin(7, 'ordinary')
+    expect(tries).toBeGreaterThanOrEqual(1)
+    expect(totalCost).toBe(tries * 1)
+  })
+
+  it('terminates for system entries and scales cost by combo count', () => {
+    const { tries, totalCost } = runUntilWin(7, 'system7')
+    expect(tries).toBeGreaterThanOrEqual(1)
+    expect(totalCost).toBe(tries * 7)
+  })
+
+  it('respects user-supplied numbers for an ordinary entry', () => {
+    const { tries } = runUntilWin(7, 'ordinary', [1, 2, 3, 4, 5, 6])
+    expect(tries).toBeGreaterThanOrEqual(1)
+  })
+
+  it('respects user-supplied numbers for a system entry', () => {
+    const { tries, totalCost } = runUntilWin(7, 'system7', [1, 2, 3, 4, 5, 6, 7])
+    expect(tries).toBeGreaterThanOrEqual(1)
+    expect(totalCost).toBe(tries * 7)
+  })
+
+  it('only reports progress at the 100k interval', () => {
+    // Group 1 (~14M tries) all but guarantees the callback fires; asserting the
+    // modulo on every report keeps the test deterministic even on a rare early win.
+    const reports = []
+    runUntilWin(1, 'ordinary', null, (t) => reports.push(t))
+    reports.forEach(t => expect(t % 100_000).toBe(0))
   })
 })
 
