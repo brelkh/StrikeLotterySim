@@ -5,8 +5,10 @@ import NumberGrid from './NumberGrid.jsx'
 // Group 7 (easiest) shown first; Group 1 (jackpot) at the bottom
 const DISPLAY_GROUPS = [...PRIZE_GROUPS].reverse()
 
-// Warn the user when a simulation is expected to take many seconds
-const SLOW_GROUPS = new Set([1, 2, 3])
+// Show a heads-up only when the expected run is long enough to be noticeable
+// (~a couple of seconds). With the optimised sim this is effectively just an
+// ordinary/quick-pick Group 1 run; system entries finish far sooner.
+const SLOW_THRESHOLD = 3_000_000
 
 export default function RunUntilWin() {
   const [targetGroup, setTargetGroup] = useState(7)
@@ -23,7 +25,7 @@ export default function RunUntilWin() {
   const group = PRIZE_GROUPS.find(g => g.group === targetGroup)
   const approxOdds = Math.round(PRIZE_ODDS[targetGroup] / config.combos)
   const expectedTries = approxOdds
-  const isSlow = SLOW_GROUPS.has(targetGroup)
+  const isSlow = expectedTries > SLOW_THRESHOLD
   const isQP = entryType === 'quickpick'
   const hasFullPick = selected.length === config.pick
 
@@ -92,14 +94,16 @@ export default function RunUntilWin() {
 
   function animateFinal(from, to, totalCost) {
     const gap = to - from
-    // If live counter already got close, just snap; otherwise short ease
-    if (gap < 5000) {
+    // The live counter is already within one progress interval (~100k) of the result,
+    // so just settle the small remainder quickly. A longer ease would dominate the now
+    // sub-second sim and make the tail look as slow as the whole run.
+    if (gap < 3000) {
       setDisplayCount(to)
       setFinalResult({ tries: to, totalCost })
       setStatus('done')
       return
     }
-    const duration = Math.min(1200, Math.max(400, gap * 0.2))
+    const duration = Math.min(250, Math.max(120, gap * 0.03))
     const start = performance.now()
     function tick(now) {
       const t = Math.min((now - start) / duration, 1)
@@ -238,13 +242,10 @@ export default function RunUntilWin() {
           gap: 8,
           alignItems: 'flex-start',
         }}>
-          <span>⚠️</span>
+          <span>⏳</span>
           <span>
-            {targetGroup === 1
-              ? 'Group 1 requires ~14 million draws on average. Expect 5–15 seconds.'
-              : targetGroup === 2
-              ? 'Group 2 requires ~2.3 million draws on average. Expect a few seconds.'
-              : 'Group 3 requires ~55,000 draws on average. May take a moment.'}
+            This averages about {expectedTries.toLocaleString()} draws — it may take a
+            second or two before the result lands.
           </span>
         </div>
       )}
