@@ -3,6 +3,8 @@
 An educational lottery odds simulator — find out how lucky (or not) you'd be.
 
 **Live demo:** `https://brelkh.github.io/StrikeLotterySim/`
+<img width="885" height="820" alt="Screenshot 2026-06-17 at 10 30 51 PM" src="https://github.com/user-attachments/assets/271e59b1-e0b9-4ff2-9f15-63501c7c8f52" />
+
 
 ---
 
