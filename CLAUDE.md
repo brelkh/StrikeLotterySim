@@ -7,7 +7,7 @@ No backend. All simulation logic runs client-side; heavy loops run in a Web Work
 ## Stack
 - **React 18** + **Vite 5** — SPA, no SSR
 - **Vitest** + **@testing-library/react** — unit tests
-- **gh-pages** — deployment to `https://brelkh.github.io/Strike/`
+- **gh-pages** — deployment to `https://brelkh.github.io/StrikeLotterySim/`
 
 ## Key files
 | Path | Purpose |
@@ -38,7 +38,7 @@ npm run deploy      # build + push to gh-pages branch
 ```
 
 ## Vite base path
-Set to `/Strike/` in `vite.config.js` for GitHub Pages. Must match the GitHub repo name.
+Set to `/StrikeLotterySim/` in `vite.config.js` for GitHub Pages. Must match the GitHub repo name.
 
 ## Adding ads (Google AdSense)
 1. Sign up at adsense.google.com and add the site URL

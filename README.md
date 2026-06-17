@@ -2,7 +2,7 @@
 
 An educational lottery odds simulator — find out how lucky (or not) you'd be.
 
-**Live demo:** `https://brelkh.github.io/Strike/`
+**Live demo:** `https://brelkh.github.io/StrikeLotterySim/`
 
 ---
 
@@ -29,8 +29,8 @@ An educational lottery odds simulator — find out how lucky (or not) you'd be.
 ## Running locally
 
 ```bash
-git clone https://github.com/brelkh/Strike.git
-cd Strike
+git clone https://github.com/brelkh/StrikeLotterySim.git
+cd StrikeLotterySim
 npm install
 npm run dev
 ```
@@ -43,7 +43,7 @@ npm test
 
 ## Deploying to GitHub Pages
 
-1. In `vite.config.js`, confirm `base: '/Strike/'` matches your repo name.
+1. In `vite.config.js`, confirm `base: '/StrikeLotterySim/'` matches your repo name.
 2. In GitHub repo → Settings → Pages → set source to the `gh-pages` branch.
 3. Then run:
 
@@ -51,7 +51,7 @@ npm test
 npm run deploy
 ```
 
-The site will be live at `https://brelkh.github.io/Strike/`.
+The site will be live at `https://brelkh.github.io/StrikeLotterySim/`.
 
 ## Monetisation
 
